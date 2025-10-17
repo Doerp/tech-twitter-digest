@@ -9,9 +9,12 @@ on:
   
   push:
     branches:
-      - main
+      - main  # Change to 'master' if that's your default branch
     paths:
       - 'generate_rss.py'  # Re-run if script is updated
+
+permissions:
+  contents: write
 
 jobs:
   generate-rss:
@@ -35,14 +38,27 @@ jobs:
       run: |
         python generate_rss.py
     
+    - name: Check generated files
+      run: |
+        echo "Checking for generated files..."
+        ls -la *.xml *.json || echo "No RSS or JSON files found"
+    
     - name: Commit and push RSS feed
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add tech_ai_twitter.xml list_members_cache.json
-        git diff --quiet && git diff --staged --quiet || \
+        
+        # Only add files if they exist
+        [ -f tech_ai_twitter.xml ] && git add tech_ai_twitter.xml || echo "RSS file not generated"
+        [ -f list_members_cache.json ] && git add list_members_cache.json || echo "Cache file not found"
+        
+        # Check if there are changes to commit
+        if ! git diff --staged --quiet 2>/dev/null; then
           git commit -m "Update RSS feed - $(date +'%Y-%m-%d %H:%M UTC')"
-        git push
+          git push
+        else
+          echo "No changes to commit"
+        fi
     
     - name: Upload RSS as artifact
       uses: actions/upload-artifact@v4
