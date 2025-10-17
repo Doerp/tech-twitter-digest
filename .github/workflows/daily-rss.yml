@@ -37,14 +37,17 @@ jobs:
     - name: Generate RSS feed
       run: |
         echo "=== Starting RSS generation ==="
-        python generate_rss.py 2>&1 | tee output.log
+        python -u generate_rss.py
+        EXIT_CODE=$?
         echo ""
-        echo "=== Script exit code: $? ==="
+        echo "=== Script exit code: $EXIT_CODE ==="
       continue-on-error: true
     
     - name: Check generated files
+      if: always()
       run: |
         echo "=== Checking for generated files ==="
+        pwd
         ls -lah
         echo ""
         echo "=== XML files ==="
@@ -53,8 +56,10 @@ jobs:
         echo "=== JSON files ==="
         ls -la *.json 2>/dev/null || echo "No JSON files found"
         echo ""
-        echo "=== Git status before commit ==="
-        git status
+        if [ -f tech_ai_twitter.xml ]; then
+          echo "=== RSS file content preview ==="
+          head -20 tech_ai_twitter.xml
+        fi
     
     - name: Commit and push RSS feed
       run: |
@@ -98,11 +103,15 @@ jobs:
         fi
     
     - name: Upload RSS as artifact
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: rss-feed
-        path: tech_ai_twitter.xml
+        path: |
+          tech_ai_twitter.xml
+          list_members_cache.json
         retention-days: 30
+        if-no-files-found: warn
     
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
