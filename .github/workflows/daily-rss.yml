@@ -1,0 +1,52 @@
+name: Daily Tech Twitter RSS Update
+
+on:
+  schedule:
+    # Run daily at 9 AM UTC (adjust to your preference)
+    - cron: '0 9 * * *'
+  
+  workflow_dispatch:  # Allow manual trigger for testing
+  
+  push:
+    branches:
+      - main
+    paths:
+      - 'generate_rss.py'  # Re-run if script is updated
+
+jobs:
+  generate-rss:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        pip install feedgen beautifulsoup4 requests lxml
+    
+    - name: Generate RSS feed
+      run: |
+        python generate_rss.py
+    
+    - name: Commit and push RSS feed
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add tech_ai_twitter.xml list_members_cache.json
+        git diff --quiet && git diff --staged --quiet || \
+          git commit -m "Update RSS feed - $(date +'%Y-%m-%d %H:%M UTC')"
+        git push
+    
+    - name: Upload RSS as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rss-feed
+        path: tech_ai_twitter.xml
+        retention-days: 30
