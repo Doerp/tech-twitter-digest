@@ -37,10 +37,23 @@ jobs:
     - name: Generate RSS feed
       run: |
         echo "=== Starting RSS generation ==="
+        echo "Python version:"
+        python --version
+        echo ""
+        echo "Working directory:"
+        pwd
+        echo ""
+        echo "Files before running script:"
+        ls -la
+        echo ""
+        echo "Running script..."
         python -u generate_rss.py
         EXIT_CODE=$?
         echo ""
         echo "=== Script exit code: $EXIT_CODE ==="
+        echo ""
+        echo "Files after running script:"
+        ls -la
       continue-on-error: true
     
     - name: Check generated files
@@ -122,6 +135,3 @@ jobs:
         publish_branch: gh-pages
         keep_files: false
         destination_dir: .
-        include: |
-          tech_ai_twitter.xml
-          list_members_cache.json
