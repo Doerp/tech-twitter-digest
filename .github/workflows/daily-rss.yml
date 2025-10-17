@@ -91,8 +91,8 @@ jobs:
     
     - name: Generate RSS feed
       run: |
-        echo "=== Running debug version ==="
-        python -u generate_rss_debug.py
+        echo "=== Running version ==="
+        python -u generate_rss.py
         echo ""
         echo "=== Listing files ==="
         ls -la *.xml *.json 2>/dev/null || echo "No XML/JSON files found"
