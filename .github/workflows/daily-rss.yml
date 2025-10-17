@@ -91,23 +91,11 @@ jobs:
     
     - name: Generate RSS feed
       run: |
-        echo "=== Starting RSS generation ==="
-        echo "Working directory:"
-        pwd
+        echo "=== Running debug version ==="
+        python -u generate_rss_debug.py
         echo ""
-        echo "Running script with full output..."
-        python -u generate_rss.py || {
-          EXIT_CODE=$?
-          echo ""
-          echo "=== Script failed with exit code: $EXIT_CODE ==="
-          echo "Checking for any output files..."
-          ls -la
-          exit $EXIT_CODE
-        }
-        echo ""
-        echo "=== Script completed successfully ==="
-        echo "Files after running script:"
-        ls -la
+        echo "=== Listing files ==="
+        ls -la *.xml *.json 2>/dev/null || echo "No XML/JSON files found"
     
     - name: Check generated files
       if: always()
