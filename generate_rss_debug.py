@@ -37,7 +37,7 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     import time
     import random
     import json
