@@ -301,7 +301,7 @@ def main():
     # Your Twitter lists
     list_urls = [
         'https://x.com/i/lists/1539497752140206080',
-        'https://x.com/garrytan/lists'
+        # Add more list URLs here if needed
     ]
     
     # Try to load cached members first
@@ -342,7 +342,30 @@ def main():
         generator.generate_rss(tweets)
         print("\n✓ Done! RSS feed ready.")
     else:
-        print("\n✗ No tweets fetched. Try again later.")
+        print("\n⚠️  No tweets fetched. Generating empty RSS feed...")
+        # Generate empty feed so the file exists
+        generator.generate_rss([], output_file='tech_ai_twitter.xml')
+        print("Created empty RSS feed as placeholder.")
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"\n❌ Fatal error: {e}")
+        import traceback
+        traceback.print_exc()
+        # Create empty RSS feed so workflow doesn't fail
+        try:
+            from feedgen.feed import FeedGenerator
+            fg = FeedGenerator()
+            fg.id('https://yourdomain.com/tech-ai-twitter')
+            fg.title('Tech & AI Twitter Daily Digest')
+            fg.author({'name': 'Twitter List Aggregator'})
+            fg.link(href='https://yourdomain.com/tech-ai-twitter', rel='alternate')
+            fg.subtitle('Error generating feed')
+            fg.language('en')
+            fg.rss_file('tech_ai_twitter.xml')
+            print("Created emergency empty RSS feed")
+        except:
+            pass
+        raise
