@@ -90,7 +90,7 @@ class TwitterListRSSGenerator:
             with open(self.cache_file, 'w') as f:
                 json.dump({
                     'accounts': accounts,
-                    'updated_at': datetime.now().isoformat()
+                    'updated_at': datetime.now(timezone.utc).isoformat()
                 }, f, indent=2)
             print(f"Cached {len(accounts)} accounts")
         except Exception as e:
@@ -177,7 +177,7 @@ class TwitterListRSSGenerator:
                     
                     # Extract timestamp
                     date_elem = item.find('span', class_='tweet-date')
-                    created_at = datetime.now()
+                    created_at = datetime.now(timezone.utc)
                     
                     if date_elem:
                         date_link = date_elem.find('a')
@@ -189,7 +189,7 @@ class TwitterListRSSGenerator:
                                 pass
                     
                     # Only include tweets from last 24 hours
-                    if (datetime.now() - created_at).days > 1:
+                    if (datetime.now(timezone.utc) - created_at).days > 1:
                         continue
                     
                     tweets.append({
@@ -253,7 +253,7 @@ class TwitterListRSSGenerator:
         fg.link(href='https://yourdomain.com/tech-ai-twitter', rel='alternate')
         fg.subtitle('Daily highlights from curated Twitter lists')
         fg.language('en')
-        fg.updated(datetime.now())
+        fg.updated(datetime.now(timezone.utc))
         
         for tweet in tweets:
             fe = fg.add_entry()
@@ -295,7 +295,7 @@ def main():
     print("=" * 70)
     print("Tech & AI Twitter RSS Generator")
     print("=" * 70)
-    print(f"Started at: {datetime.now().isoformat()}")
+    print(f"Started at: {datetime.now(timezone.utc).isoformat()}")
     print()
     
     try:
@@ -383,7 +383,7 @@ def main():
             fg.link(href='https://yourdomain.com/tech-ai-twitter', rel='alternate')
             fg.subtitle('Error generating feed - see logs')
             fg.language('en')
-            fg.updated(datetime.now())
+            fg.updated(datetime.now(timezone.utc))
             fg.rss_file('tech_ai_twitter.xml')
             print("✓ Emergency RSS feed created")
         except Exception as e2:
