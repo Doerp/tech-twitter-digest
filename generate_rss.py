@@ -295,66 +295,85 @@ def main():
     print("=" * 70)
     print("Tech & AI Twitter RSS Generator")
     print("=" * 70)
+    print(f"Started at: {datetime.now().isoformat()}")
+    print()
     
-    generator = TwitterListRSSGenerator()
-    
-    # Your Twitter lists
-    list_urls = [
-        'https://x.com/i/lists/1539497752140206080',
-        # Add more list URLs here if needed
-    ]
-    
-    # Try to load cached members first
-    cached_accounts = generator.load_cached_members()
-    
-    # Refresh list members every 7 days or if cache is empty
-    cache_age_days = 999
-    if os.path.exists(generator.cache_file):
-        try:
-            cache_mtime = os.path.getmtime(generator.cache_file)
-            cache_age_days = (time.time() - cache_mtime) / 86400
-        except:
-            pass
-    
-    if cached_accounts and cache_age_days < 7:
-        print(f"Using cached list members (cache age: {cache_age_days:.1f} days)")
-        generator.accounts = cached_accounts
-    else:
-        print("Fetching fresh list members...")
-        generator.accounts = generator.fetch_all_list_members(list_urls)
-        if generator.accounts:
-            generator.save_cached_members(generator.accounts)
-        else:
-            print("Failed to fetch list members, using cache if available")
-            generator.accounts = cached_accounts
-    
-    if not generator.accounts:
-        print("\n✗ No accounts found! Check the list URLs and Nitter instances.")
-        return
-    
-    print(f"\nMonitoring {len(generator.accounts)} accounts")
-    
-    # Fetch tweets
-    tweets = generator.fetch_all_tweets()
-    
-    # Generate RSS
-    if tweets:
-        generator.generate_rss(tweets)
-        print("\n✓ Done! RSS feed ready.")
-    else:
-        print("\n⚠️  No tweets fetched. Generating empty RSS feed...")
-        # Generate empty feed so the file exists
-        generator.generate_rss([], output_file='tech_ai_twitter.xml')
-        print("Created empty RSS feed as placeholder.")
-
-if __name__ == '__main__':
     try:
-        main()
+        generator = TwitterListRSSGenerator()
+        
+        # Your Twitter lists
+        list_urls = [
+            'https://x.com/i/lists/1539497752140206080',
+            # Add more list URLs here if needed
+        ]
+        
+        print(f"Lists to process: {len(list_urls)}")
+        for url in list_urls:
+            print(f"  - {url}")
+        print()
+        
+        # Try to load cached members first
+        cached_accounts = generator.load_cached_members()
+        
+        # Refresh list members every 7 days or if cache is empty
+        cache_age_days = 999
+        if os.path.exists(generator.cache_file):
+            try:
+                cache_mtime = os.path.getmtime(generator.cache_file)
+                cache_age_days = (time.time() - cache_mtime) / 86400
+                print(f"Cache file age: {cache_age_days:.1f} days")
+            except Exception as e:
+                print(f"Error checking cache age: {e}")
+        
+        if cached_accounts and cache_age_days < 7:
+            print(f"Using cached list members (cache age: {cache_age_days:.1f} days)")
+            generator.accounts = cached_accounts
+        else:
+            print("Fetching fresh list members...")
+            generator.accounts = generator.fetch_all_list_members(list_urls)
+            if generator.accounts:
+                generator.save_cached_members(generator.accounts)
+            else:
+                print("Failed to fetch list members, trying cache...")
+                generator.accounts = cached_accounts
+        
+        if not generator.accounts:
+            print("\n❌ ERROR: No accounts found!")
+            print("Creating empty RSS feed as fallback...")
+            generator.generate_rss([], output_file='tech_ai_twitter.xml')
+            print("Empty feed created at: tech_ai_twitter.xml")
+            return
+        
+        print(f"\n✓ Monitoring {len(generator.accounts)} accounts")
+        
+        # Fetch tweets
+        print("\nFetching tweets...")
+        tweets = generator.fetch_all_tweets()
+        
+        # Generate RSS
+        print(f"\nGenerating RSS feed...")
+        if tweets:
+            generator.generate_rss(tweets)
+            print(f"✓ Done! RSS feed ready with {len(tweets)} tweets.")
+        else:
+            print("⚠️  No tweets fetched. Generating empty RSS feed...")
+            generator.generate_rss([], output_file='tech_ai_twitter.xml')
+            print("Created empty RSS feed as placeholder.")
+        
+        # Verify file was created
+        if os.path.exists('tech_ai_twitter.xml'):
+            file_size = os.path.getsize('tech_ai_twitter.xml')
+            print(f"\n✓ RSS file exists: tech_ai_twitter.xml ({file_size} bytes)")
+        else:
+            print("\n❌ ERROR: RSS file was not created!")
+            
     except Exception as e:
         print(f"\n❌ Fatal error: {e}")
         import traceback
         traceback.print_exc()
-        # Create empty RSS feed so workflow doesn't fail
+        
+        # Create emergency empty RSS feed
+        print("\nCreating emergency RSS feed...")
         try:
             from feedgen.feed import FeedGenerator
             fg = FeedGenerator()
@@ -362,10 +381,12 @@ if __name__ == '__main__':
             fg.title('Tech & AI Twitter Daily Digest')
             fg.author({'name': 'Twitter List Aggregator'})
             fg.link(href='https://yourdomain.com/tech-ai-twitter', rel='alternate')
-            fg.subtitle('Error generating feed')
+            fg.subtitle('Error generating feed - see logs')
             fg.language('en')
+            fg.updated(datetime.now())
             fg.rss_file('tech_ai_twitter.xml')
-            print("Created emergency empty RSS feed")
-        except:
-            pass
+            print("✓ Emergency RSS feed created")
+        except Exception as e2:
+            print(f"❌ Could not create emergency feed: {e2}")
+        
         raise
